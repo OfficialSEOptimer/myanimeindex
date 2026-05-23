@@ -597,6 +597,25 @@ ul, ol { list-style: none; }
 }
 .slider-track::-webkit-scrollbar { display: none; }
 .slider-track.dragging { scroll-behavior: auto; cursor: grabbing; scroll-snap-type: none; user-select: none; }
+
+/* Fixed width for anime cards inside slider to prevent oversized images */
+.slider-track .anime-card {
+  flex: 0 0 auto;
+  width: 160px;
+  scroll-snap-align: start;
+}
+/* Smaller screens – slightly smaller cards */
+@media (max-width: 768px) {
+  .slider-track .anime-card {
+    width: 140px;
+  }
+}
+@media (max-width: 480px) {
+  .slider-track .anime-card {
+    width: 120px;
+  }
+}
+
 .slider-arrow {
   position: absolute;
   top: 50%;
@@ -926,7 +945,7 @@ ul, ol { list-style: none; }
     const img = getImage(anime) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const title = getTitle(anime);
     return `
-      <a href="anime.html?id=${malId}" class="anime-card fade-in" style="min-width: 140px; scroll-snap-align: start;">
+      <a href="anime.html?id=${malId}" class="anime-card fade-in">
         <div style="position:relative; aspect-ratio:2/3; overflow:hidden; border-radius:8px;">
           <img src="${img}" alt="${title}" style="width:100%; height:100%; object-fit:cover;">
           <div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,0.8));"></div>
