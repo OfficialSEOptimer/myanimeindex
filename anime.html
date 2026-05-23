@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Details - StreamFlix</title>
+    <meta name="description" content="Anime details, characters, episodes, and recommendations.">
+    <style>
+        /* Same core styles as index.html + page‑specific additions */
+        :root {
+            --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a28; --surface3: #222235;
+            --primary: #8b5cf6; --primary-glow: #a78bfa; --accent: #c084fc;
+            --text: #f1f1f7; --text2: #b0b0c8; --text3: #7c7c9a;
+            --danger: #ef4444; --warning: #f59e0b; --success: #22c55e;
+            --radius-sm: 8px; --radius: 12px; --radius-lg: 18px; --radius-xl: 24px;
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.6); --shadow-glow: 0 0 40px rgba(139,92,246,0.25);
+            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --max-width: 1400px; --header-h: 64px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { overflow-x: hidden; max-width: 100%; width: 100%; }
+        body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; }
+        a { text-decoration: none; color: inherit; }
+        button { border: none; cursor: pointer; font-family: inherit; background: none; color: inherit; }
+        img { max-width: 100%; display: block; }
+        iframe { border: none; }
+        .header, .sidebar, .search-overlay { /* same as index */ }
+        .header { position: sticky; top: 0; z-index: 1000; background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); height: var(--header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(12px,3vw,32px); }
+        .header__hamburger, .header__logo, .header__search-btn { /* same as before */ }
+        .sidebar-overlay, .sidebar { /* same */ }
+        .search-overlay { /* same */ }
+        .btn { display: inline-flex; align-items: center; gap: 7px; padding: clamp(10px,1.5vw,13px) clamp(18px,2.5vw,26px); border-radius: var(--radius); font-weight: 600; font-size: clamp(0.85rem,1.2vw,0.95rem); transition: var(--transition); cursor: pointer; white-space: nowrap; }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 20px rgba(139,92,246,0.4); }
+        .btn-primary:hover { background: #7c3aed; transform: translateY(-2px); }
+        .btn-outline { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(8px); }
+        .btn-outline:hover { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.4); }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+        /* Page‑specific */
+        .banner { position: relative; width: 100%; height: clamp(280px, 40vw, 450px); overflow: hidden; }
+        .banner__bg { width: 100%; height: 100%; object-fit: cover; }
+        .banner__overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 0%, transparent 60%); }
+        .details { padding: clamp(16px,3vw,32px); max-width: var(--max-width); margin: 0 auto; display: flex; gap: clamp(16px,3vw,32px); flex-wrap: wrap; }
+        .poster { flex-shrink: 0; width: clamp(160px,22vw,240px); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
+        .poster img { width: 100%; aspect-ratio: 3/4.2; object-fit: cover; }
+        .info { flex: 1; min-width: 280px; }
+        .info h1 { font-size: clamp(1.8rem,3.5vw,2.5rem); font-weight: 800; line-height: 1.15; margin-bottom: 8px; }
+        .meta-list { display: flex; gap: 12px; flex-wrap: wrap; color: var(--text2); font-size: 0.9rem; margin-bottom: 12px; }
+        .genres { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .genre-tag { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); color: var(--text2); }
+        .synopsis { color: var(--text2); line-height: 1.6; margin-bottom: 16px; font-size: 0.95rem; }
+        .tabs { display: flex; gap: 4px; margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.06); overflow-x: auto; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { padding: 10px 18px; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid transparent; color: var(--text2); transition: var(--transition); white-space: nowrap; }
+        .tab-btn.active { color: var(--primary-glow); border-bottom-color: var(--primary-glow); }
+        .tab-content { padding: 20px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+        .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; transition: var(--transition); border: 1px solid rgba(255,255,255,0.04); cursor: pointer; }
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-glow); }
+        .card img { aspect-ratio: 3/4; object-fit: cover; width: 100%; }
+        .card p { padding: 8px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .section-title { font-size: 1.3rem; font-weight: 700; margin: 24px 0 12px; }
+        @media (max-width: 600px) {
+            .details { flex-direction: column; align-items: center; }
+            .poster { width: 180px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER / SIDEBAR / SEARCH OVERLAY (same structure) -->
+    <header class="header" id="header">
+        <button class="header__hamburger" id="hamburgerBtn" aria-label="Menu">☰</button>
+        <a href="index.html" class="header__logo"><span class="header__logo-icon">▶</span> Stream<span>Flix</span></a>
+        <button class="header__search-btn" id="searchBtn" aria-label="Search">🔍</button>
+    </header>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar__header"><span>Menu</span><button class="sidebar__close" id="sidebarClose">✕</button></div>
+        <nav class="sidebar__nav">
+            <a href="index.html">🏠 Home</a><a href="search.html">🔍 Search</a><a href="schedule.html">📅 Schedule</a><a href="creator.html">👤 Creator</a>
+        </nav>
+    </aside>
+    <div class="search-overlay" id="searchOverlay">
+        <button class="search-overlay__close" id="searchOverlayClose">✕</button>
+        <div class="search-overlay__input-wrap">
+            <input type="text" class="search-overlay__input" id="searchOverlayInput" placeholder="Search anime...">
+            <span class="search-overlay__icon">🔍</span>
+        </div>
+        <div class="search-overlay__results" id="searchOverlayResults"></div>
+    </div>
+
+    <main id="animeMain">
+        <div class="banner" id="banner"><div class="banner__overlay"></div></div>
+        <div class="details" id="detailsContainer">Loading...</div>
+        <div class="tabs" id="tabs"></div>
+        <div class="tab-content" id="tabContent"></div>
+    </main>
+    <footer class="footer" style="text-align:center;padding:2rem;border-top:1px solid rgba(255,255,255,0.05);color:var(--text3);font-size:0.8rem;">
+        © 2025 StreamFlix. Powered by Jikan API
+    </footer>
+    <script>
+        (function() {
+            const JIKAN = 'https://api.jikan.moe/v4';
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id') || 1;
+            const $ = s => document.querySelector(s);
+            const $$ = s => Array.from(document.querySelectorAll(s));
+            let animeData = null;
+            async function fetchAnime() {
+                try {
+                    const res = await fetch(`${JIKAN}/anime/${id}/full`);
+                    const data = await res.json();
+                    animeData = data.data;
+                    renderDetails();
+                    renderTabs();
+                    loadTab('characters');
+                } catch (e) { $('.details').innerHTML = '<p>Failed to load anime details.</p>'; }
+            }
+            function renderDetails() {
+                const a = animeData;
+                document.title = a.title + ' - StreamFlix';
+                const bannerImg = a.images?.jpg?.large_image_url || '';
+                if(bannerImg) {
+                    const img = document.createElement('img');
+                    img.src = bannerImg;
+                    img.className = 'banner__bg';
+                    img.alt = a.title;
+                    document.getElementById('banner').prepend(img);
+                }
+                const genres = (a.genres||[]).map(g=>`<span class="genre-tag">${g.name}</span>`).join('');
+                $('#detailsContainer').innerHTML = `
+                    <div class="poster"><img src="${a.images?.jpg?.large_image_url||a.images?.jpg?.image_url}" alt="${a.title}"></div>
+                    <div class="info">
+                        <h1>${a.title}</h1>
+                        <div class="meta-list">
+                            <span>⭐ ${a.score?.toFixed(1)||'?'}</span>
+                            <span>${a.type||'TV'}</span>
+                            <span>${a.episodes||'?'} EP</span>
+                            <span>${a.status||'?'}</span>
+                            <span>${a.aired?.string||''}</span>
+                        </div>
+                        <div class="genres">${genres}</div>
+                        <p class="synopsis">${a.synopsis||'No synopsis.'}</p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="window.location.href='watch.html?id=${a.mal_id}&ep=1&type=sub'">▶ Watch Now</button>
+                            ${a.trailer?.url ? `<a href="${a.trailer.url}" target="_blank" class="btn btn-outline">🎬 Trailer</a>` : ''}
+                        </div>
+                    </div>`;
+            }
+            async function loadTab(tab) {
+                const content = $('#tabContent');
+                content.innerHTML = 'Loading...';
+                let url = '';
+                if(tab==='characters') url = `${JIKAN}/anime/${id}/characters`;
+                else if(tab==='episodes') url = `${JIKAN}/anime/${id}/episodes`;
+                else if(tab==='recommendations') url = `${JIKAN}/anime/${id}/recommendations`;
+                else if(tab==='relations') url = `${JIKAN}/anime/${id}/relations`;
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    renderTabContent(tab, data.data||[]);
+                } catch(e) { content.innerHTML = '<p>Failed to load.</p>'; }
+            }
+            function renderTabContent(tab, items) {
+                const content = $('#tabContent');
+                if(!items.length) { content.innerHTML = '<p>No data.</p>'; return; }
+                let html = '<div class="grid">';
+                items.forEach(item => {
+                    if(tab==='characters') {
+                        const c = item.character;
+                        html += `<div class="card"><img src="${c.images?.jpg?.image_url||''}" alt="${c.name}"><p>${c.name}</p></div>`;
+                    } else if(tab==='episodes') {
+                        html += `<div class="card" onclick="window.location.href='watch.html?id=${id}&ep=${item.mal_id}&type=sub'"><p>Ep ${item.mal_id}: ${item.title||'Episode '+item.mal_id}</p></div>`;
+                    } else if(tab==='recommendations') {
+                        const r = item.entry;
+                        html += `<div class="card" onclick="window.location.href='anime.html?id=${r.mal_id}'"><img src="${r.images?.jpg?.image_url||''}" alt="${r.title}"><p>${r.title}</p></div>`;
+                    } else if(tab==='relations') {
+                        const r = item.entry?.[0] || item;
+                        html += `<div class="card" onclick="window.location.href='anime.html?id=${r.mal_id}'"><img src="${r.images?.jpg?.image_url||''}" alt="${r.title}"><p>${r.title}</p></div>`;
+                    }
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            }
+            function renderTabs() {
+                const tabs = ['characters','episodes','recommendations','relations'];
+                const container = $('#tabs');
+                container.innerHTML = tabs.map(t=>`<button class="tab-btn" data-tab="${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+                container.querySelectorAll('.tab-btn').forEach(btn=>{
+                    btn.addEventListener('click', function() {
+                        container.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+                        this.classList.add('active');
+                        loadTab(this.dataset.tab);
+                    });
+                });
+                container.querySelector('[data-tab="characters"]').classList.add('active');
+            }
+            fetchAnime();
+            // Sidebar & Search (simplified, same as index)
+            function initSidebarSearch() {
+                const sidebar = $('#sidebar'), overlay = $('#sidebarOverlay');
+                $('#hamburgerBtn').addEventListener('click', ()=>{ sidebar.classList.add('open'); overlay.classList.add('open'); });
+                $('#sidebarClose').addEventListener('click', ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+                overlay.addEventListener('click', ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+                const searchOv = $('#searchOverlay'), input = $('#searchOverlayInput'), results = $('#searchOverlayResults');
+                $('#searchBtn').addEventListener('click', ()=>{ searchOv.classList.add('open'); input.focus(); });
+                $('#searchOverlayClose').addEventListener('click', ()=> searchOv.classList.remove('open'));
+                searchOv.addEventListener('click', e=>{ if(e.target===searchOv) searchOv.classList.remove('open'); });
+            }
+            initSidebarSearch();
+        })();
+    </script>
+</body>
+</html>
