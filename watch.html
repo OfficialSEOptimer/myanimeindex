@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Anime - StreamFlix</title>
+    <style>
+        :root {
+            --bg: #0a0a0f; --surface: #12121a; --primary: #8b5cf6; --text: #f1f1f7; --text2: #b0b0c8;
+            --radius: 12px; --transition: 0.3s ease; --header-h: 64px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { overflow-x: hidden; max-width: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; }
+        .header { /* same style */ position: sticky; top:0; z-index:1000; background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); height: var(--header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(12px,3vw,32px); border-bottom:1px solid rgba(255,255,255,0.06); }
+        .player-container { width: 100%; max-width: 1200px; margin: 20px auto; padding: 0 16px; }
+        .player { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: var(--radius); overflow: hidden; }
+        .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; align-items: center; }
+        .btn { padding: 10px 18px; border-radius: var(--radius); font-weight: 600; border: none; cursor: pointer; background: var(--surface); color: var(--text); transition: var(--transition); }
+        .btn.active { background: var(--primary); color: #fff; }
+        .episode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 16px; max-height: 300px; overflow-y: auto; }
+        .ep-btn { padding: 8px; background: var(--surface); border-radius: 6px; text-align: center; cursor: pointer; font-size: 0.8rem; }
+        .ep-btn.active { background: var(--primary); }
+        .sidebar-info { background: var(--surface); padding: 16px; border-radius: var(--radius); margin-top: 20px; }
+        @media (max-width: 600px) {
+            .controls { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" style="font-weight:800;font-size:1.4rem;">Stream<span style="color:var(--primary);">Flix</span></a>
+        <button onclick="window.history.back()" style="background:none;border:none;color:#fff;font-size:1.2rem;">← Back</button>
+    </header>
+    <div class="player-container">
+        <div class="player" id="playerFrame">
+            <p style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;">Loading player...</p>
+        </div>
+        <div class="controls">
+            <button class="btn" id="subBtn">Sub</button>
+            <button class="btn" id="dubBtn">Dub</button>
+            <button class="btn" id="prevEp">◂ Prev</button>
+            <button class="btn" id="nextEp">Next ▸</button>
+            <span id="epInfo" style="color:var(--text2);"></span>
+            <button class="btn" id="theaterToggle">🎭 Theater</button>
+            <button class="btn" id="fullscreenBtn">⛶ Fullscreen</button>
+        </div>
+        <div class="episode-grid" id="episodeGrid"></div>
+        <div class="sidebar-info" id="animeInfo">Loading anime info...</div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const malId = params.get('id') || 1;
+        let currentEp = parseInt(params.get('ep')) || 1;
+        let currentType = params.get('type') || 'sub';
+        const totalEpisodes = 24; // will be fetched
+        const STREAM_BASE = 'https://megaplay.buzz/stream/mal';
+        function updatePlayer() {
+            document.getElementById('playerFrame').innerHTML = `<iframe src="${STREAM_BASE}/${malId}/${currentEp}/${currentType}" allowfullscreen></iframe>`;
+            document.getElementById('epInfo').textContent = `Episode ${currentEp} · ${currentType.toUpperCase()}`;
+            highlightActiveEp();
+        }
+        function highlightActiveEp() {
+            document.querySelectorAll('.ep-btn').forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.ep) === currentEp);
+            });
+        }
+        async function fetchAnimeDetails() {
+            const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}/full`);
+            const data = await res.json();
+            const anime = data.data;
+            document.title = `Watch ${anime.title} Ep ${currentEp}`;
+            document.getElementById('animeInfo').innerHTML = `<h3>${anime.title}</h3><p>⭐ ${anime.score} · ${anime.episodes||'?'} episodes</p>`;
+            const eps = anime.episodes || 24;
+            generateEpisodeButtons(eps);
+            updatePlayer();
+        }
+        function generateEpisodeButtons(total) {
+            const grid = document.getElementById('episodeGrid');
+            let html = '';
+            for(let i=1; i<=total; i++) {
+                html += `<div class="ep-btn" data-ep="${i}" onclick="changeEpisode(${i})">${i}</div>`;
+            }
+            grid.innerHTML = html;
+            highlightActiveEp();
+        }
+        function changeEpisode(ep) {
+            currentEp = ep;
+            updatePlayer();
+            window.history.replaceState({}, '', `?id=${malId}&ep=${ep}&type=${currentType}`);
+        }
+        document.getElementById('subBtn').addEventListener('click', ()=>{ currentType='sub'; updatePlayer(); });
+        document.getElementById('dubBtn').addEventListener('click', ()=>{ currentType='dub'; updatePlayer(); });
+        document.getElementById('prevEp').addEventListener('click', ()=>{ if(currentEp>1) changeEpisode(currentEp-1); });
+        document.getElementById('nextEp').addEventListener('click', ()=>{ changeEpisode(currentEp+1); });
+        document.getElementById('theaterToggle').addEventListener('click', ()=>{
+            document.querySelector('.player-container').classList.toggle('theater');
+        });
+        document.getElementById('fullscreenBtn').addEventListener('click', ()=>{
+            const iframe = document.querySelector('.player iframe');
+            if(iframe) iframe.requestFullscreen();
+        });
+        fetchAnimeDetails();
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e=>{
+            if(e.key === 'f') document.getElementById('fullscreenBtn').click();
+            if(e.key === 'ArrowLeft') document.getElementById('prevEp').click();
+            if(e.key === 'ArrowRight') document.getElementById('nextEp').click();
+        });
+    </script>
+</body>
+</html>
